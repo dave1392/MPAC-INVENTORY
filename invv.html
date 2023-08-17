@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management</title>
+    <style>
+        #searchBar {
+            width: 100%;
+            font-size: 18px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid black;
+        }
+        .editable {
+            cursor: pointer;
+        }
+        #addItemForm {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="searchBar" placeholder="Search" onkeyup="search()"/>
+    <table id="inventoryTable">
+        <tr>
+            <th>Name</th>
+            <th>Part Number</th>
+            <th>NSN</th>
+            <th>Quantity</th>
+            <th>Location</th>
+            <th>Action</th> <!-- Delete button column -->
+        </tr>
+    </table>
+    <form id="addItemForm">
+        <input type="text" placeholder="Name" id="name"/>
+        <input type="text" placeholder="Part Number" id="partNumber"/>
+        <input type="text" placeholder="NSN" id="nsn"/>
+        <input type="number" placeholder="Quantity" id="quantity"/>
+        <input type="text" placeholder="Location" id="location"/>
+        <button type="button" onclick="addItem()">Add Item</button>
+    </form>
+
+    <script>
+        const table = document.getElementById('inventoryTable');
+
+        function loadItems() {
+            const items = JSON.parse(localStorage.getItem('inventory') || '[]');
+            items.forEach((item, index) => {
+                addItemToTable(item, index);
+            });
+        }
+
+        function addItemToTable(item, index) {
+            const row = table.insertRow();
+            Object.keys(item).forEach(key => {
+                const cell = row.insertCell();
+                cell.innerHTML = item[key];
+                cell.className = 'editable';
+                cell.contentEditable = true;
+            });
+            // Add delete button
+            const deleteCell = row.insertCell();
+            const deleteButton = document.createElement('button');
+            deleteButton.innerHTML = 'Delete';
+            deleteButton.onclick = function() { deleteItem(index, row); };
+            deleteCell.appendChild(deleteButton);
+        }
+
+        function addItem() {
+            const item = {
+                name: document.getElementById('name').value,
+                partNumber: document.getElementById('partNumber').value,
+                nsn: document.getElementById('nsn').value,
+                quantity: document.getElementById('quantity').value,
+                location: document.getElementById('location').value
+            };
+            const items = JSON.parse(localStorage.getItem('inventory') || '[]');
+            items.push(item);
+            localStorage.setItem('inventory', JSON.stringify(items));
+            addItemToTable(item, items.length - 1);
+
+            // Clearing the input fields
+            document.getElementById('name').value = '';
+            document.getElementById('partNumber').value = '';
+            document.getElementById('nsn').value = '';
+            document.getElementById('quantity').value = '';
+            document.getElementById('location').value = '';
+        }
+
+        function deleteItem(index, row) {
+            const items = JSON.parse(localStorage.getItem('inventory') || '[]');
+            items.splice(index, 1);
+            localStorage.setItem('inventory', JSON.stringify(items));
+            row.remove();
+            // Refresh the table to update row indices
+            table.innerHTML = '<tr><th>Name</th><th>Part Number</th><th>NSN</th><th>Quantity</th><th>Location</th><th>Action</th></tr>';
+            loadItems();
+        }
+
+        function search() {
+            const input = document.getElementById('searchBar');
+            const filter = input.value.toUpperCase();
+            const rows = table.getElementsByTagName('tr');
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let match = false;
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j].innerText.toUpperCase().includes(filter)) {
+                        match = true;
+                        break;
+                    }
+                }
+                rows[i].style.display = match ? '' : 'none';
+            }
+        }
+
+        loadItems();
+    </script>
+</body>
+</html>
